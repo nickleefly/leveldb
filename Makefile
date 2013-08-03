@@ -19,12 +19,31 @@ include build_config.mk
 
 CFLAGS += -I. -I./include $(PLATFORM_CCFLAGS) $(OPT)
 CXXFLAGS += -I. -I./include $(PLATFORM_CXXFLAGS) $(OPT)
+# Read in common build variable definitions and source file list.
+include common.mk
+
+# If Snappy is installed, add compilation and linker flags
+# (see http://code.google.com/p/snappy/)
+ifeq ($(SNAPPY), 1)
+SNAPPY_CFLAGS=-DSNAPPY
+SNAPPY_LDFLAGS=-lsnappy
+else
+SNAPPY_CFLAGS=
+SNAPPY_LDFLAGS=
+endif
 
 LDFLAGS += $(PLATFORM_LDFLAGS)
 LIBS += $(PLATFORM_LIBS)
 
+
 LIBOBJECTS = $(SOURCES:.cc=.o)
 MEMENVOBJECTS = $(MEMENV_SOURCES:.cc=.o)
+
+CFLAGS = -c $(C_INCLUDES:%=-I%) $(PORT_CFLAGS) $(PLATFORM_CFLAGS) $(OPT) $(SNAPPY_CFLAGS)
+
+LDFLAGS=$(PLATFORM_LDFLAGS) $(SNAPPY_LDFLAGS) $(GOOGLE_PERFTOOLS_LDFLAGS)
+
+LIBOBJECTS = $(SOURCES:.cc=.o) port/port_posix.o
 
 TESTUTIL = ./util/testutil.o
 TESTHARNESS = ./util/testharness.o $(TESTUTIL)
