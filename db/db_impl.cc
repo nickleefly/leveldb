@@ -720,9 +720,12 @@ Status DBImpl::BackgroundCompaction() {
 
   if (is_manual) {
     ManualCompaction* m = manual_compaction_;
+<<<<<<< HEAD
     if (!status.ok()) {
       m->done = true;
     }
+=======
+>>>>>>> upstream/windows
     if (!m->done) {
       // We only compacted part of the requested range.  Update *m
       // to the range that is left to be compacted.
@@ -1184,6 +1187,7 @@ Status DBImpl::Write(const WriteOptions& options, WriteBatch* my_batch) {
 
     versions_->SetLastSequence(last_sequence);
   }
+<<<<<<< HEAD
 
   while (true) {
     Writer* ready = writers_.front();
@@ -1201,6 +1205,9 @@ Status DBImpl::Write(const WriteOptions& options, WriteBatch* my_batch) {
     writers_.front()->cv.Signal();
   }
 
+=======
+  ReleaseLoggingResponsibility(&self);
+>>>>>>> upstream/windows
   return status;
 }
 

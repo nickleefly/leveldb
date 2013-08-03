@@ -172,6 +172,8 @@ TEST(FindFileTest, OverlappingFiles) {
   ASSERT_TRUE(Overlaps("600", "700"));
 }
 
+}
+
 }  // namespace leveldb
 
 int main(int argc, char** argv) {

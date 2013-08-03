@@ -622,11 +622,11 @@ TEST(DBTest, GetEncountersEmptyLevel) {
       dbfull()->TEST_CompactMemTable();
     }
 
-    // Step 2: clear level 1 if necessary.
-    dbfull()->TEST_CompactRange(1, NULL, NULL);
-    ASSERT_EQ(NumTableFilesAtLevel(0), 1);
-    ASSERT_EQ(NumTableFilesAtLevel(1), 0);
-    ASSERT_EQ(NumTableFilesAtLevel(2), 1);
+  // Step 2: clear level 1 if necessary.
+  dbfull()->TEST_CompactRange(1, NULL, NULL);
+  ASSERT_EQ(NumTableFilesAtLevel(0), 1);
+  ASSERT_EQ(NumTableFilesAtLevel(1), 0);
+  ASSERT_EQ(NumTableFilesAtLevel(2), 1);
 
     // Step 3: read a bunch of times
     for (int i = 0; i < 1000; i++) {
@@ -1085,6 +1085,11 @@ TEST(DBTest, ApproximateSizes) {
 
       ASSERT_EQ(NumTableFilesAtLevel(0), 0);
       ASSERT_GT(NumTableFilesAtLevel(1), 0);
+      std::string cstart_str = Key(compact_start);
+      std::string cend_str = Key(compact_start + 9);
+      Slice cstart = cstart_str;
+      Slice cend = cend_str;
+      dbfull()->TEST_CompactRange(0, &cstart, &cend);
     }
   } while (ChangeOptions());
 }
@@ -1125,6 +1130,8 @@ TEST(DBTest, ApproximateSizes_MixOfSmallAndLarge) {
       dbfull()->TEST_CompactRange(0, NULL, NULL);
     }
   } while (ChangeOptions());
+    dbfull()->TEST_CompactRange(0, NULL, NULL);
+  }
 }
 
 TEST(DBTest, IteratorPinsRef) {
@@ -1346,6 +1353,42 @@ TEST(DBTest, L0_CompactionBug_Issue44_b) {
   ASSERT_EQ("(->)(c->cv)", Contents());
   DelayMilliseconds(1000);  // Wait for compaction to finish
   ASSERT_EQ("(->)(c->cv)", Contents());
+  ASSERT_EQ(config::kMaxMemCompactLevel, 2) << "Fix test to match config";
+
+  // Fill levels 1 and 2 to disable the pushing of new memtables to levels > 0.
+  ASSERT_OK(Put("100", "v100"));
+  ASSERT_OK(Put("999", "v999"));
+  dbfull()->TEST_CompactMemTable();
+  ASSERT_OK(Delete("100"));
+  ASSERT_OK(Delete("999"));
+  dbfull()->TEST_CompactMemTable();
+  ASSERT_EQ("0,1,1", FilesPerLevel());
+
+  // Make files spanning the following ranges in level-0:
+  //  files[0]  200 .. 900
+  //  files[1]  300 .. 500
+  // Note that files are sorted by smallest key.
+  ASSERT_OK(Put("300", "v300"));
+  ASSERT_OK(Put("500", "v500"));
+  dbfull()->TEST_CompactMemTable();
+  ASSERT_OK(Put("200", "v200"));
+  ASSERT_OK(Put("600", "v600"));
+  ASSERT_OK(Put("900", "v900"));
+  dbfull()->TEST_CompactMemTable();
+  ASSERT_EQ("2,1,1", FilesPerLevel());
+
+  // Compact away the placeholder files we created initially
+  dbfull()->TEST_CompactRange(1, NULL, NULL);
+  dbfull()->TEST_CompactRange(2, NULL, NULL);
+  ASSERT_EQ("2", FilesPerLevel());
+
+  // Do a memtable compaction.  Before bug-fix, the compaction would
+  // not detect the overlap with level-0 files and would incorrectly place
+  // the deletion in a deeper level.
+  ASSERT_OK(Delete("600"));
+  dbfull()->TEST_CompactMemTable();
+  ASSERT_EQ("3", FilesPerLevel());
+  ASSERT_EQ("NOT_FOUND", Get("600"));
 }
 
 TEST(DBTest, ComparatorCheck) {
