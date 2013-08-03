@@ -132,11 +132,8 @@ bool SomeFileOverlapsRange(
   const Comparator* ucmp = icmp.user_comparator();
   if (!disjoint_sorted_files) {
     // Need to check against all files
-<<<<<<< HEAD
+
     for (size_t i = 0; i < files.size(); i++) {
-=======
-    for (int i = 0; i < files.size(); i++) {
->>>>>>> upstream/windows
       const FileMetaData* f = files[i];
       if (AfterFile(ucmp, smallest_user_key, f) ||
           BeforeFile(ucmp, largest_user_key, f)) {
@@ -465,7 +462,6 @@ void Version::GetOverlappingInputs(
     user_end = end->user_key();
   }
   const Comparator* user_cmp = vset_->icmp_.user_comparator();
-<<<<<<< HEAD
   for (size_t i = 0; i < files_[level].size(); ) {
     FileMetaData* f = files_[level][i++];
     const Slice file_start = f->smallest.user_key();
@@ -489,18 +485,6 @@ void Version::GetOverlappingInputs(
           i = 0;
         }
       }
-=======
-  for (size_t i = 0; i < files_[level].size(); i++) {
-    FileMetaData* f = files_[level][i];
-    if (begin != NULL &&
-        user_cmp->Compare(f->largest.user_key(), user_begin) < 0) {
-      // "f" is completely before specified range; skip it
-    } else if (end != NULL &&
-               user_cmp->Compare(f->smallest.user_key(), user_end) > 0) {
-      // "f" is completely after specified range; skip it
-    } else {
-      inputs->push_back(f);
->>>>>>> upstream/windows
     }
   }
 }
@@ -1286,15 +1270,13 @@ void VersionSet::SetupOtherInputs(Compaction* c) {
   if (!c->inputs_[1].empty()) {
     std::vector<FileMetaData*> expanded0;
     current_->GetOverlappingInputs(level, &all_start, &all_limit, &expanded0);
-<<<<<<< HEAD
+
     const int64_t inputs0_size = TotalFileSize(c->inputs_[0]);
     const int64_t inputs1_size = TotalFileSize(c->inputs_[1]);
     const int64_t expanded0_size = TotalFileSize(expanded0);
     if (expanded0.size() > c->inputs_[0].size() &&
         inputs1_size + expanded0_size < kExpandedCompactionByteSizeLimit) {
-=======
-    if (expanded0.size() > c->inputs_[0].size()) {
->>>>>>> upstream/windows
+
       InternalKey new_start, new_limit;
       GetRange(expanded0, &new_start, &new_limit);
       std::vector<FileMetaData*> expanded1;
@@ -1352,7 +1334,6 @@ Compaction* VersionSet::CompactRange(
   }
 
   // Avoid compacting too much in one shot in case the range is large.
-<<<<<<< HEAD
   // But we cannot do this for level-0 since level-0 files can overlap
   // and we must not pick one file and drop another older file if the
   // two files overlap.
@@ -1366,16 +1347,6 @@ Compaction* VersionSet::CompactRange(
         inputs.resize(i + 1);
         break;
       }
-=======
-  const uint64_t limit = MaxFileSizeForLevel(level);
-  uint64_t total = 0;
-  for (int i = 0; i < inputs.size(); i++) {
-    uint64_t s = inputs[i]->file_size;
-    total += s;
-    if (total >= limit) {
-      inputs.resize(i + 1);
-      break;
->>>>>>> upstream/windows
     }
   }
 
